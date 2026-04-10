@@ -1,0 +1,33 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}Certificate | Silay City DRRMO{% endblock %}
+
+{% block content %}
+<div class="card" style="border: none; box-shadow: none;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <h1>Certificate of Assessment</h1>
+        <p><strong>Place:</strong> {{ certificate.place.name }}</p>
+        <p><strong>Issued:</strong> {{ certificate.issued_date|date:'M d, Y' }}</p>
+    </div>
+    <div class="card">
+        <p><strong>Issuer:</strong> {{ certificate.issuer_name }}</p>
+        <p><strong>Requestor:</strong> {{ certificate.requestor_name }}</p>
+        <p><strong>Building or business:</strong> {{ certificate.business_name }}</p>
+        {% if certificate.project_name %}
+            <p><strong>Project:</strong> {{ certificate.project_name }}</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Certificate statement</h3>
+        <p>This certificate confirms that an assessment was conducted for the location above, and the information supplied is based on the DRRMO CDRA assessment process.</p>
+    </div>
+    {% if certificate.remarks %}
+    <div class="card">
+        <h3>Remarks</h3>
+        <p>{{ certificate.remarks|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+    <div class="card" style="margin-top: 2rem;">
+        <button onclick="window.print();" class="button">Print certificate</button>
+    </div>
+</div>
+{% endblock %}

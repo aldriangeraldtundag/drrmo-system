@@ -1,0 +1,25 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}Flood record: {{ record.event_date }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Flood record details</h2>
+    <p class="help-text">Review the flood event and its impact details.</p>
+</div>
+<div class="card">
+    <p><strong>Date:</strong> {{ record.event_date }}</p>
+    <p><strong>Place:</strong> {{ record.place.name if record.place else 'Unlinked' }}</p>
+    <p><strong>Barangay:</strong> {{ record.barangay }}</p>
+    <p><strong>Location:</strong> {{ record.location_description }}</p>
+    <p><strong>Severity:</strong> {{ record.get_severity_display }}</p>
+    <p><strong>Affected households:</strong> {{ record.affected_households|default:'N/A' }}</p>
+    <p><strong>Source:</strong> {{ record.source }}</p>
+</div>
+<div class="card">
+    <h3>Impact details</h3>
+    <p>{{ record.impact_details|default:'No details provided.'|linebreaksbr }}</p>
+</div>
+<div class="card" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <a class="button" href="{% url 'flood_record_list' %}">Back to records</a>
+</div>
+{% endblock %}

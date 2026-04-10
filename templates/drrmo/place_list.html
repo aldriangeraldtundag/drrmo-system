@@ -1,0 +1,36 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}Places | Silay City DRRMO{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Places</h2>
+    <p class="help-text">Create and manage barangays or assessment locations used by the CDRA workflow.</p>
+    <a class="button" href="/admin/drrmo/place/add/">Add place</a>
+</div>
+<div class="card">
+    {% if places %}
+        <table class="list-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Reports</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for place in places %}
+                    <tr>
+                        <td>{{ place.name }}</td>
+                        <td>{{ place.code }}</td>
+                        <td>{{ place.reports.count }}</td>
+                        <td><a class="button secondary" href="/places/{{ place.pk }}/">View</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No places have been added yet. Use the admin or import process to create places.</p>
+    {% endif %}
+</div>
+{% endblock %}

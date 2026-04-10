@@ -1,0 +1,398 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}CDRA Map | Silay City DRRMO{% endblock %}
+
+{% block content %}
+<style>
+    html, body {
+        height: 100%;
+        overflow: hidden;
+    }
+    main {
+        max-width: none;
+        margin: 0;
+        min-height: 100vh;
+        padding: 0;
+        position: relative;
+        overflow: hidden;
+    }
+    #map {
+        min-height: 360px;
+        height: 100%;
+        width: 100%;
+    }
+    .leaflet-top.leaflet-right {
+        top: 1rem;
+    }
+    @media (max-width: 1024px) {
+        html, body {
+            overflow: auto;
+        }
+        main {
+            overflow: visible;
+        }
+        .map-layout {
+            min-height: auto;
+        }
+        #map {
+            min-height: 60vh;
+        }
+    }
+</style>
+<div class="map-layout grid lg:grid-cols-[280px_1fr] gap-6 min-h-[calc(100vh-5rem)] px-6 py-6 lg:px-8">
+    <aside id="sidebar" class="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white/95 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] lg:sticky lg:top-6 lg:max-h-[calc(100vh-5rem)]">
+        <h3 class="text-xl font-semibold text-slate-900">Map controls</h3>
+        <div class="mt-6 space-y-6">
+            <div>
+                <label for="barangay-select" class="block text-sm font-semibold text-slate-700 mb-2">Select barangay</label>
+                <select id="barangay-select" class="block w-full rounded-3xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
+                    <option value="">-- Select a barangay --</option>
+                    <option value="ALL">Show whole Silay City</option>
+                </select>
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-slate-700 mb-3">Flood hazard layers</p>
+                <div class="space-y-3 text-sm text-slate-800">
+                    <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <input type="checkbox" id="hazard-lf" checked class="h-4 w-4 rounded text-sky-600 focus:ring-sky-500" />
+                        Low susceptibility
+                    </label>
+                    <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <input type="checkbox" id="hazard-mf" checked class="h-4 w-4 rounded text-sky-600 focus:ring-sky-500" />
+                        Moderate susceptibility
+                    </label>
+                    <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <input type="checkbox" id="hazard-hf" checked class="h-4 w-4 rounded text-sky-600 focus:ring-sky-500" />
+                        High susceptibility
+                    </label>
+                    <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <input type="checkbox" id="hazard-vhf" checked class="h-4 w-4 rounded text-sky-600 focus:ring-sky-500" />
+                        Very high susceptibility
+                    </label>
+                </div>
+                <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <button id="show-all-hazard" class="inline-flex justify-center rounded-full bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 hover:bg-sky-700">Show all</button>
+                    <button id="hide-all-hazard" class="inline-flex justify-center rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 hover:bg-slate-700">Hide all</button>
+                </div>
+            </div>
+            <div>
+                <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+                    <input type="checkbox" id="boundary-toggle" checked class="h-4 w-4 rounded text-sky-600 focus:ring-sky-500" />
+                    Show Silay City boundary
+                </label>
+            </div>
+        </div>
+    </aside>
+    <section class="map-card h-full overflow-hidden rounded-[32px] border border-slate-200 bg-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+        <div id="map" class="h-full w-full"></div>
+    </section>
+</div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const places = [
+            {% for place in places %}
+            {
+                id: {{ place.pk }},
+                name: {{ place.name|escapejs }},
+                barangay: {{ place.name|escapejs }},
+                lat: {{ place.latitude }},
+                lon: {{ place.longitude }},
+            },
+            {% endfor %}
+        ];
+
+        const map = L.map('map', {doubleClickZoom: false}).setView([10.7, 122.95], 11);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18,
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+        }).addTo(map);
+
+        const boundaryLayer = L.geoJSON(null, {
+            style: {
+                color: '#000000',
+                weight: 1,
+                fill: false,
+            },
+            onEachFeature: function (feature, layer) {
+                const name = feature.properties.name || feature.properties.NAME || 'Barangay';
+                layer.on('click', function (e) {
+                    L.DomEvent.stopPropagation(e);
+                    layer.bindPopup(`<strong>Barangay</strong><br>${name}`).openPopup();
+                });
+            }
+        }).addTo(map);
+
+        const hazardLabels = {
+            LF: 'Low Susceptibility',
+            MF: 'Moderate Susceptibility',
+            HF: 'High Susceptibility',
+            VHF: 'Very High Susceptibility',
+        };
+
+        function pointInRing(point, ring) {
+            let inside = false;
+            for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                const xi = ring[i][0], yi = ring[i][1];
+                const xj = ring[j][0], yj = ring[j][1];
+                const intersect = ((yi > point.lat) !== (yj > point.lat)) &&
+                    (point.lng < (xj - xi) * (point.lat - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        function pointInPolygon(latlng, geometry) {
+            if (!geometry) return false;
+            const coords = geometry.coordinates;
+            const point = { lat: latlng.lat, lng: latlng.lng };
+
+            if (geometry.type === 'Polygon') {
+                const [outerRing, ...holes] = coords;
+                if (!pointInRing(point, outerRing)) return false;
+                return !holes.some(hole => pointInRing(point, hole));
+            }
+
+            if (geometry.type === 'MultiPolygon') {
+                return coords.some(polygon => {
+                    const [outerRing, ...holes] = polygon;
+                    if (!pointInRing(point, outerRing)) return false;
+                    return !holes.some(hole => pointInRing(point, hole));
+                });
+            }
+
+            return false;
+        }
+
+        function getBoundaryAtLatLng(latlng) {
+            let boundaryName = null;
+            boundaryLayer.eachLayer(layer => {
+                if (!boundaryName && layer.feature && layer.feature.geometry) {
+                    if (pointInPolygon(latlng, layer.feature.geometry)) {
+                        boundaryName = layer.feature.properties.name || layer.feature.properties.NAME || null;
+                    }
+                }
+            });
+            return boundaryName;
+        }
+
+        const hazardGroups = {
+            LF: L.layerGroup().addTo(map),
+            MF: L.layerGroup().addTo(map),
+            HF: L.layerGroup().addTo(map),
+            VHF: L.layerGroup().addTo(map),
+        };
+
+        const hazardLayer = L.geoJSON(null, {
+            style: function (feature) {
+                const code = feature.properties.HazCode || feature.properties.hazcode || 'Unknown';
+                const color = {
+                    'LF': '#E3D1FF',
+                    'MF': '#B045FF',
+                    'HF': '#5900FF',
+                    'VHF': '#002673',
+                    'Unknown': '#94a3b8'
+                }[code] || '#94a3b8';
+                return {
+                    color: '#1f2937',
+                    fillColor: color,
+                    weight: 1,
+                    fillOpacity: 0.55,
+                };
+            },
+            onEachFeature: function (feature, layer) {
+                const code = feature.properties.HazCode || feature.properties.hazcode || 'Unknown';
+                const label = hazardLabels[code] || feature.properties.HazDesc || feature.properties.hazdesc || code;
+                layer.on('click', function (e) {
+                    L.DomEvent.stopPropagation(e);
+                    const barangay = getBoundaryAtLatLng(e.latlng);
+                    let popupContent = `<strong>${label}</strong>`;
+                    if (barangay) {
+                        popupContent += `<br>Barangay: ${barangay}`;
+                    }
+                    layer.bindPopup(popupContent).openPopup();
+                });
+                if (hazardGroups[code]) {
+                    hazardGroups[code].addLayer(layer);
+                }
+            }
+        });
+
+        fetch('{% url "geojson_hazard" %}')
+            .then(response => response.json())
+            .then(data => hazardLayer.addData(data));
+
+        const barangaySelect = document.getElementById('barangay-select');
+        const boundaryToggle = document.getElementById('boundary-toggle');
+        const hazardCheckboxes = {
+            LF: document.getElementById('hazard-lf'),
+            MF: document.getElementById('hazard-mf'),
+            HF: document.getElementById('hazard-hf'),
+            VHF: document.getElementById('hazard-vhf'),
+        };
+        const showAllBtn = document.getElementById('show-all-hazard');
+        const hideAllBtn = document.getElementById('hide-all-hazard');
+        const boundaryFeatures = [];
+        const highlightedBarangay = L.geoJSON(null, {
+            style: {
+                color: '#66d9ff',
+                weight: 3,
+                opacity: 0.95,
+                fill: false,
+            }
+        }).addTo(map);
+
+        function showHazard(code, show) {
+            if (hazardGroups[code]) {
+                if (show) {
+                    map.addLayer(hazardGroups[code]);
+                } else {
+                    map.removeLayer(hazardGroups[code]);
+                }
+            }
+        }
+
+        function updateHazardVisibility() {
+            Object.keys(hazardCheckboxes).forEach(code => {
+                showHazard(code, hazardCheckboxes[code].checked);
+            });
+        }
+
+        function populateBarangays() {
+            boundaryLayer.eachLayer(layer => {
+                const name = layer.feature.properties.name || layer.feature.properties.NAME || '';
+                if (name) {
+                    boundaryFeatures.push({ name, layer });
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    barangaySelect.appendChild(option);
+                }
+            });
+        }
+
+        function highlightBarangay(layer) {
+            highlightedBarangay.clearLayers();
+            if (layer && layer.feature) {
+                highlightedBarangay.addData(layer.feature);
+            }
+        }
+
+        function zoomToCityBoundary() {
+            const bounds = boundaryLayer.getBounds();
+            if (bounds.isValid()) {
+                if (!map.hasLayer(boundaryLayer)) {
+                    boundaryToggle.checked = true;
+                    map.addLayer(boundaryLayer);
+                }
+                map.fitBounds(bounds, { padding: [40, 40] });
+                highlightedBarangay.clearLayers();
+            }
+        }
+
+        function zoomToBarangay(name) {
+            const item = boundaryFeatures.find(entry => entry.name === name);
+            if (item) {
+                if (!map.hasLayer(boundaryLayer)) {
+                    boundaryToggle.checked = true;
+                    map.addLayer(boundaryLayer);
+                }
+                map.fitBounds(item.layer.getBounds(), { padding: [30, 30] });
+                highlightBarangay(item.layer);
+            }
+        }
+
+        boundaryToggle.addEventListener('change', function () {
+            if (this.checked) {
+                map.addLayer(boundaryLayer);
+            } else {
+                map.removeLayer(boundaryLayer);
+            }
+        });
+
+        Object.keys(hazardCheckboxes).forEach(code => {
+            hazardCheckboxes[code].addEventListener('change', updateHazardVisibility);
+        });
+
+        showAllBtn.addEventListener('click', function () {
+            Object.keys(hazardCheckboxes).forEach(code => {
+                hazardCheckboxes[code].checked = true;
+            });
+            updateHazardVisibility();
+        });
+
+        hideAllBtn.addEventListener('click', function () {
+            Object.keys(hazardCheckboxes).forEach(code => {
+                hazardCheckboxes[code].checked = false;
+            });
+            updateHazardVisibility();
+        });
+
+        barangaySelect.addEventListener('change', function () {
+            const name = this.value;
+            if (name === 'ALL') {
+                zoomToCityBoundary();
+            } else if (name) {
+                zoomToBarangay(name);
+            } else {
+                highlightedBarangay.clearLayers();
+            }
+        });
+
+        map.on('click', function (e) {
+            if (!map.hasLayer(boundaryLayer)) {
+                return;
+            }
+            const barangay = getBoundaryAtLatLng(e.latlng);
+            if (barangay) {
+                L.popup()
+                    .setLatLng(e.latlng)
+                    .setContent(`<strong>Barangay</strong><br>${barangay}`)
+                    .openOn(map);
+            }
+        });
+
+        fetch('{% url "geojson_boundary" %}')
+            .then(response => response.json())
+            .then(data => {
+                boundaryLayer.addData(data);
+                populateBarangays();
+                const boundaryBounds = boundaryLayer.getBounds();
+                if (boundaryBounds.isValid()) {
+                    map.fitBounds(boundaryBounds, { padding: [40, 40] });
+                }
+            });
+
+        const legend = L.control({position: 'topright'});
+        legend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'info legend');
+            const grades = [
+                {label: 'VHF - Very High', color: '#002673'},
+                {label: 'HF - High', color: '#5900FF'},
+                {label: 'MF - Moderate', color: '#B045FF'},
+                {label: 'LF - Low', color: '#E3D1FF'},
+            ];
+            div.innerHTML = '<strong>Hazard class</strong><br>';
+            grades.forEach(function (grade) {
+                div.innerHTML += `<i style="background:${grade.color}; width: 16px; height: 16px; display: inline-block; margin-right: 8px;"></i>${grade.label}<br>`;
+            });
+            return div;
+        };
+        legend.addTo(map);
+
+        const bounds = [];
+        places.forEach(place => {
+            const marker = L.marker([place.lat, place.lon]).addTo(map);
+            marker.bindPopup(`<strong>${place.name}</strong><br>Double-click to assess.`);
+            marker.on('dblclick', function () {
+                marker.openPopup();
+            });
+            bounds.push([place.lat, place.lon]);
+        });
+
+        if (bounds.length) {
+            map.fitBounds(bounds, {padding: [40, 40]});
+        }
+    });
+</script>
+{% endblock %}

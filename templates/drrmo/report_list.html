@@ -1,0 +1,35 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}Reports | Silay City DRRMO{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Assessment reports</h2>
+    <p class="help-text">Browse all assessment reports created for Silay City DRRMO.</p>
+</div>
+<div class="card">
+    {% if reports %}
+        <table class="list-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Place</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                    <tr>
+                        <td>{{ report.title }}</td>
+                        <td>{{ report.place.name }}</td>
+                        <td>{{ report.created_at|date:'M d, Y H:i' }}</td>
+                        <td><a class="button secondary" href="{% url 'report_detail' report.pk %}">View</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No assessment reports have been created yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

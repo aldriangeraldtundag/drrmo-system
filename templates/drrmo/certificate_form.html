@@ -1,0 +1,28 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}Generate Certificate | Silay City DRRMO{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Generate certificate</h2>
+    <p class="help-text">Fill in the certificate details for the selected place and then preview the certificate before printing.</p>
+    <p><strong>Place:</strong> {{ place.name }}</p>
+</div>
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="help-text">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p style="color: #b91c1c; margin: 0.25rem 0 0;">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="button">Preview certificate</button>
+    </form>
+</div>
+{% endblock %}

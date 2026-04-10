@@ -1,0 +1,22 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}{{ report.title }} | Silay City DRRMO{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ report.title }}</h2>
+    <p><strong>Place:</strong> {{ report.place.name }}</p>
+    <p><strong>Created:</strong> {{ report.created_at|date:'M d, Y H:i' }}</p>
+</div>
+<div class="card">
+    <h3>Summary</h3>
+    <p>{{ report.summary|linebreaksbr }}</p>
+</div>
+<div class="card">
+    <h3>Recommendations</h3>
+    <p>{{ report.recommendations|default:'No recommendations yet.'|linebreaksbr }}</p>
+</div>
+<div class="card" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <a class="button" href="{% url 'report_print' report.pk %}">Print report</a>
+    <a class="button secondary" href="{% url 'place_detail' report.place.pk %}">Back to place</a>
+</div>
+{% endblock %}

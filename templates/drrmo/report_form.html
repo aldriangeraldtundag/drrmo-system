@@ -1,0 +1,29 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}New Report | Silay City DRRMO{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Create assessment report</h2>
+    <p class="help-text">Fill the report details and save the assessment. The report can be extended later with recommendations and automatic certificate generation.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="field">
+            <label>Place</label>
+            <p>{{ place.name }}</p>
+        </div>
+        {% for field in form.visible_fields %}
+            <div class="field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="help-text">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p style="color: #b91c1c; margin: 0.25rem 0 0;">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="button">Save report</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'drrmo/base.html' %}
+{% block title %}Flood Records | Silay City DRRMO{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Flood records</h2>
+    <p class="help-text">Manage historical flood event records and import or export Excel files.</p>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+        <a class="button" href="{% url 'flood_record_create' %}">New record</a>
+        <a class="button secondary" href="{% url 'flood_record_import' %}">Import Excel</a>
+        <a class="button secondary" href="{% url 'flood_record_export' %}">Export Excel</a>
+    </div>
+</div>
+<div class="card">
+    {% if records %}
+        <table class="list-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Barangay</th>
+                    <th>Location</th>
+                    <th>Severity</th>
+                    <th>Households</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                    <tr>
+                        <td>{{ record.event_date }}</td>
+                        <td>{{ record.barangay }}</td>
+                        <td>{{ record.location_description }}</td>
+                        <td>{{ record.get_severity_display }}</td>
+                        <td>{{ record.affected_households|default:'—' }}</td>
+                        <td><a class="button secondary" href="{% url 'flood_record_detail' record.pk %}">View</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No flood records found yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
