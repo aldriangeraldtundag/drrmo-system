@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.contrib.gis.db import models as gis_models
 from django.db import models
 
 
@@ -7,8 +8,7 @@ class Place(models.Model):
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=50, blank=True)
     description = models.TextField(blank=True)
-    latitude = models.FloatField(blank=True, null=True)
-    longitude = models.FloatField(blank=True, null=True)
+    location = gis_models.PointField(srid=4326, geography=True, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -16,6 +16,18 @@ class Place(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def latitude(self):
+        if self.location:
+            return self.location.y
+        return None
+
+    @property
+    def longitude(self):
+        if self.location:
+            return self.location.x
+        return None
 
 
 class AssessmentReport(models.Model):

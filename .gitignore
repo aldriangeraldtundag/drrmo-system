@@ -18,6 +18,7 @@ env/
 
 # Local dotenv files
 .local_settings.py
+local_settings.py
 
 # Ignore shapefile components
 data/*.shp

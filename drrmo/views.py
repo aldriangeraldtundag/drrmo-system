@@ -5,6 +5,7 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -445,9 +446,10 @@ def geojson_hazard(request):
     return JsonResponse(_load_geojson('SilayCity_Admin_MGB_Flooding_10k.geojson'))
 
 
+@ensure_csrf_cookie
 @login_required
 def map_view(request):
-    places = Place.objects.filter(latitude__isnull=False, longitude__isnull=False).all()
+    places = Place.objects.filter(location__isnull=False).all()
     return render(request, 'drrmo/map.html', {
         'places': places,
     })

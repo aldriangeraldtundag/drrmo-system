@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.gis',
     'drrmo',
 ]
 
@@ -76,8 +77,12 @@ WSGI_APPLICATION = 'capstone.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'drrmo_db',
+        'USER': 'drrmo_user',
+        'PASSWORD': 'zNtsqd66SJqRJrAUMFbxg1h5C2XwerZw',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -93,9 +98,6 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 
-# Local configuration override
-if os.path.exists(BASE_DIR / 'local_settings.py'):
-    from .local_settings import *
 
 
 # Password validation
@@ -129,7 +131,3 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = 'static/'
